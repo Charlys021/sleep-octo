@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Régua de Macros</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0b0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0a0b0f;
+    --card:#13151c;
+    --card2:#191c26;
+    --border:#242836;
+    --purple:#9b6bff;
+    --cyan:#2dd4e8;
+    --green:#3ee08c;
+    --red:#ff5c6a;
+    --amber:#ffb84d;
+    --text:#eef0f5;
+    --muted:#8b93a5;
+    --input-bg:#0e1017;
+  }
+  [data-theme="light"]{
+    --bg:#f4f5f9;
+    --card:#ffffff;
+    --card2:#ffffff;
+    --border:#e3e6ef;
+    --text:#12131a;
+    --muted:#6b7280;
+    --input-bg:#f0f1f6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(155,107,255,.16), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(45,212,232,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    min-height:100vh;
+    padding:20px 16px 70px;
+    transition:background .2s ease, color .2s ease;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .eyebrow{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--purple); font-weight:700; margin-bottom:6px;
+  }
+  h1{
+    font-size:24px; margin:0 0 4px; font-weight:800; letter-spacing:-.01em;
+  }
+  .sub{color:var(--muted); font-size:13px; margin-bottom:18px;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:11px; border:1px solid var(--border);
+    background:var(--card); color:var(--text); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .streak-badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700;
+    background:rgba(255,184,77,.12); color:var(--amber); border:1px solid rgba(255,184,77,.35);
+    padding:4px 10px; border-radius:999px; margin-bottom:14px;
+  }
+  .card{
+    background:linear-gradient(180deg,var(--card2),var(--card));
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--muted); margin:0 0 16px; font-weight:700;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .card h2 .h2-action{
+    text-transform:none; letter-spacing:0; font-weight:600; font-size:12px;
+    color:var(--purple); cursor:pointer; background:none; border:none;
+  }
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .field input, .field select{
+    width:100%; background:var(--input-bg); border:1px solid var(--border);
+    color:var(--text); padding:10px 12px; border-radius:10px; font-size:15px;
+    outline:none;
+  }
+  .field input:focus, .field select:focus{border-color:var(--purple);}
+  .segmented{display:flex; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .segmented button{
+    flex:1; background:transparent; border:none; color:var(--muted);
+    padding:10px 6px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .segmented button.active{background:var(--purple); color:#fff;}
+  .goal-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:6px;}
+  .goal-btn{
+    background:var(--input-bg); border:1px solid var(--border); border-radius:10px;
+    padding:10px 6px; text-align:center; cursor:pointer; color:var(--muted); font-size:13px; font-weight:600;
+  }
+  .goal-btn.active{border-color:var(--cyan); color:var(--cyan); background:rgba(45,212,232,.08);}
+  .slider-block{margin-top:14px;}
+  .slider-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .slider-head .val{color:var(--purple); font-weight:800; font-size:15px;}
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:6px; border-radius:4px;
+    background:linear-gradient(90deg,var(--purple),var(--cyan));
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+    background:#fff; border:3px solid var(--purple); cursor:pointer; margin-top:-1px;
+  }
+  .ruler-caption{display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:4px;}
+
+  .regua{
+    position:relative; height:56px; border-radius:12px; overflow:hidden;
+    border:1px solid var(--border); display:flex;
+  }
+  .regua .seg{
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    color:#0a0b0f; font-weight:800; font-size:12px; position:relative;
+    transition:flex-basis .25s ease;
+  }
+  .seg small{font-weight:600; font-size:10px; opacity:.75; margin-top:2px;}
+  .seg.protein{background:var(--purple);}
+  .seg.fat{background:var(--red);}
+  .seg.carb{background:var(--green);}
+
+  .result-hero{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .result-hero .kcal{font-size:40px; font-weight:800; letter-spacing:-.02em;}
+  .result-hero .kcal-label{color:var(--muted); font-size:13px;}
+  .macro-list{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px;}
+  .macro-pill{background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:12px;}
+  .macro-pill .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+  .macro-pill .g{font-size:20px; font-weight:800; margin-top:4px;}
+  .macro-pill .kc{font-size:11px; color:var(--muted);}
+  .bmi-row{display:flex; align-items:center; justify-content:space-between; margin-top:10px;}
+  .bmi-tag{font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;}
+  .warn{
+    margin-top:12px; font-size:12px; color:var(--red); background:rgba(255,92,106,.08);
+    border:1px solid rgba(255,92,106,.3); padding:10px 12px; border-radius:10px;
+  }
+  .footer-note{color:var(--muted); font-size:11px; text-align:center; margin-top:20px; line-height:1.6;}
+
+  .tabs{display:flex; gap:6px; margin-bottom:18px; background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:4px; overflow-x:auto;}
+  .tab-btn{flex:1; background:transparent; border:none; color:var(--muted); padding:10px 6px; border-radius:9px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .tab-btn.active{background:linear-gradient(135deg,var(--purple),#6f4bd6); color:#fff;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .search-row{display:flex; gap:8px;}
+  .search-row input{flex:1;}
+  .cat-scroll{display:flex; gap:6px; overflow-x:auto; margin-top:10px; padding-bottom:4px;}
+  .cat-scroll::-webkit-scrollbar{height:4px;}
+  .chip{
+    flex:0 0 auto; background:var(--input-bg); border:1px solid var(--border); color:var(--muted);
+    padding:7px 12px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{background:rgba(155,107,255,.15); border-color:var(--purple); color:var(--purple);}
+  .food-count{font-size:11px; color:var(--muted); margin:10px 2px 6px;}
+  .food-item{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:11px 4px; border-bottom:1px solid var(--border);}
+  .food-item:last-child{border-bottom:none;}
+  .food-name{font-size:13.5px; font-weight:600; line-height:1.3;}
+  .food-cat{font-size:10.5px; color:var(--muted); margin-top:2px;}
+  .food-macro{font-size:10.5px; color:var(--muted); margin-top:2px;}
+  .food-actions{display:flex; align-items:center; gap:6px; flex:0 0 auto;}
+  .star-btn{width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:var(--input-bg); font-size:15px; cursor:pointer; color:var(--muted);}
+  .star-btn.active{color:var(--amber); border-color:rgba(255,184,77,.5); background:rgba(255,184,77,.1);}
+  .add-btn{
+    flex:0 0 auto; width:32px; height:32px; border-radius:9px; border:1px solid var(--purple);
+    background:rgba(155,107,255,.1); color:var(--purple); font-size:18px; font-weight:800; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .meal-target-row{display:flex; gap:6px; overflow-x:auto; margin-bottom:14px;}
+  .meal-target-row .chip{font-size:11.5px;}
+
+  .meal-section{margin-bottom:14px;}
+  .meal-section:last-child{margin-bottom:0;}
+  .meal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .meal-head .mname{font-size:13px; font-weight:700;}
+  .meal-head .mkcal{font-size:11.5px; color:var(--muted);}
+  .meal-item{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);}
+  .meal-item:last-child{border-bottom:none;}
+  .meal-item .name{flex:1; font-size:13px; font-weight:600;}
+  .meal-item .kc{font-size:11px; color:var(--muted);}
+  .meal-item input[type=number]{width:60px; text-align:center; padding:6px 4px; font-size:13px; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; color:var(--text);}
+  .rm-btn{width:26px; height:26px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); color:var(--red); font-size:14px; cursor:pointer; flex:0 0 auto;}
+  .empty-plate{color:var(--muted); font-size:12.5px; text-align:center; padding:14px 0;}
+  .bar-row{margin-top:10px;}
+  .bar-row .label-row{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px;}
+  .bar-track{height:8px; border-radius:5px; background:var(--input-bg); border:1px solid var(--border); overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px; transition:width .2s ease;}
+
+  .date-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .date-nav .dbtn{width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-size:16px; cursor:pointer;}
+  .date-nav .dlabel{font-size:14px; font-weight:700; text-align:center;}
+  .date-nav .dsub{font-size:11px; color:var(--muted); text-align:center; margin-top:1px;}
+
+  .water-row{display:flex; align-items:center; gap:10px; margin-top:4px;}
+  .water-btn{background:var(--input-bg); border:1px solid var(--border); color:var(--cyan); font-weight:700; border-radius:10px; padding:8px 12px; font-size:13px; cursor:pointer;}
+  .water-val{font-size:13px; color:var(--muted); flex:1; text-align:right;}
+
+  .suggest-card{border-color:rgba(155,107,255,.4);}
+  .suggest-item{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); gap:8px;}
+  .suggest-item:last-child{border-bottom:none;}
+  .suggest-name{font-size:13px; font-weight:600;}
+  .suggest-why{font-size:10.5px; color:var(--muted); margin-top:2px;}
+  .suggest-tag{font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; display:inline-block; margin-top:3px;}
+
+  .action-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+  .btn-ghost{background:var(--input-bg); border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .btn-ghost.purple{color:var(--purple); border-color:rgba(155,107,255,.4);}
+
+  /* ---- Modal (Config) ---- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:80;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-sheet{
+    width:100%; max-width:720px; max-height:88vh; overflow-y:auto;
+    background:var(--card); border:1px solid var(--border); border-radius:20px 20px 0 0;
+    padding:20px 18px 26px;
+  }
+  .modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .modal-head h2{font-size:16px; margin:0; font-weight:800;}
+  .modal-sub{color:var(--muted); font-size:11.5px; line-height:1.5; margin:2px 0 12px;}
+  .cfg-section{margin-bottom:20px;}
+  .cfg-section h3{font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 10px;}
+  .cfg-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);}
+  .cfg-row:last-child{border-bottom:none;}
+  .cfg-row label{font-size:13px; font-weight:600;}
+  .cfg-row input[type=time]{background:var(--input-bg); border:1px solid var(--border); color:var(--text); padding:7px 8px; border-radius:8px; font-size:13px;}
+  .toggle{width:42px; height:24px; border-radius:999px; background:var(--input-bg); border:1px solid var(--border); position:relative; cursor:pointer; flex:0 0 auto;}
+  .toggle::after{content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:var(--muted); transition:transform .15s ease, background .15s ease;}
+  .toggle.on{background:rgba(155,107,255,.25); border-color:var(--purple);}
+  .toggle.on::after{transform:translateX(18px); background:var(--purple);}
+  .radio-pills{display:flex; flex-wrap:wrap; gap:8px;}
+  .radio-pill{background:var(--input-bg); border:1px solid var(--border); border-radius:999px; padding:8px 13px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer;}
+  .radio-pill.active{background:rgba(155,107,255,.15); border-color:var(--purple); color:var(--purple);}
+  .btn-solid{background:linear-gradient(135deg,var(--purple),#6f4bd6); color:#fff; border:none; padding:11px 16px; border-radius:12px; font-size:13.5px; font-weight:700; cursor:pointer; width:100%;}
+  .modal-close-row{margin-top:6px;}
+
+  /* ---- Foto IA ---- */
+  .photo-result-item{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--border);}
+  .photo-result-item:last-child{border-bottom:none;}
+  .photo-result-item input[type=number]{width:56px; text-align:center; padding:6px 4px; font-size:13px; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; color:var(--text);}
+  .ai-badge{display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.05em; color:var(--cyan); background:rgba(45,212,232,.1); border:1px solid rgba(45,212,232,.35); padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle;}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2px solid var(--border); border-top-color:var(--purple); animation:spin .7s linear infinite; display:inline-block; vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---- Micronutrientes ---- */
+  .micro-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;}
+  .micro-note{font-size:10.5px; color:var(--muted); margin-top:10px; line-height:1.5;}
+
+  /* ---- Receitas ---- */
+  .recipe-filters{display:flex; gap:6px; overflow-x:auto; margin-bottom:12px;}
+  .recipe-card{background:var(--input-bg); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px;}
+  .recipe-head{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .recipe-title{font-size:14.5px; font-weight:700;}
+  .recipe-tags{margin-top:4px; display:flex; gap:5px; flex-wrap:wrap;}
+  .recipe-tag{font-size:9.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:rgba(155,107,255,.12); color:var(--purple); border:1px solid rgba(155,107,255,.3);}
+  .recipe-macro{font-size:11.5px; color:var(--muted); margin-top:8px;}
+  .recipe-ing{font-size:11px; color:var(--muted); margin-top:8px; line-height:1.6;}
+  .recipe-actions{display:flex; gap:8px; margin-top:12px;}
+  .recipe-actions .btn-ghost{flex:1; text-align:center;}
+  .shop-list-item{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
+  .shop-list-item:last-child{border-bottom:none;}
+
+  /* ---- Relatório semanal ---- */
+  .week-compare{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .week-compare:last-child{border-bottom:none;}
+  .trend-up{color:var(--red); font-weight:700;}
+  .trend-down{color:var(--cyan); font-weight:700;}
+  .trend-flat{color:var(--muted); font-weight:700;}
+
+  canvas{width:100%; display:block;}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:12px;}
+  .stat-pill{background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:10px; text-align:center;}
+  .stat-pill .v{font-size:16px; font-weight:800;}
+  .stat-pill .l{font-size:10px; color:var(--muted); margin-top:2px;}
+  .weight-row{display:flex; gap:8px; align-items:flex-end;}
+  .weight-row .field{flex:1;}
+  .weight-log{margin-top:10px; max-height:150px; overflow-y:auto;}
+  .weight-log-item{display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; border-bottom:1px solid var(--border);}
+  .weight-log-item:last-child{border-bottom:none;}
+  .delta-up{color:var(--red); font-weight:700;}
+  .delta-down{color:var(--green); font-weight:700;}
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:var(--card2); border:1px solid var(--border); color:var(--text);
+    padding:10px 16px; border-radius:12px; font-size:12.5px; font-weight:600;
+    box-shadow:0 8px 24px rgba(0,0,0,.35); z-index:50; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="eyebrow">Régua de macros</div>
+      <h1>Calculadora + Diário</h1>
+      <div class="sub">Calcula, registra e recebe sugestões pra bater tua meta.</div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="icon-btn" id="cfgBtn" title="Configurações">⚙️</button>
+      <button class="icon-btn" id="themeBtn" title="Alternar tema">🌙</button>
+    </div>
+  </div>
+
+  <div id="streakBadge" class="streak-badge" style="display:none;">🔥 <span id="streakVal">0</span> dias seguidos registrando</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="calc">Calculadora</button>
+    <button class="tab-btn" data-tab="diario">Diário</button>
+    <button class="tab-btn" data-tab="foods">Alimentos</button>
+    <button class="tab-btn" data-tab="receitas">Receitas</button>
+    <button class="tab-btn" data-tab="progresso">Progresso</button>
+  </div>
+
+  <!-- ===================== CALCULADORA ===================== -->
+  <div class="view active" id="viewCalc">
+  <div class="card">
+    <h2>Seus dados</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Peso (kg)</label>
+        <input type="number" id="peso" value="80" step="0.1" min="30">
+      </div>
+      <div class="field">
+        <label>Altura (cm)</label>
+        <input type="number" id="altura" value="177" step="1" min="120">
+      </div>
+      <div class="field">
+        <label>Idade</label>
+        <input type="number" id="idade" value="20" step="1" min="14">
+      </div>
+      <div class="field">
+        <label>Sexo (p/ TMB)</label>
+        <div class="segmented" id="sexoSeg">
+          <button data-v="M" class="active">Masculino</button>
+          <button data-v="F">Feminino</button>
+        </div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label>Nível de atividade</label>
+      <select id="atividade">
+        <option value="1.2">Sedentário (pouco ou nenhum treino)</option>
+        <option value="1.375">Leve (treino leve 1-3x/semana)</option>
+        <option value="1.55" selected>Moderado (treino 3-5x/semana)</option>
+        <option value="1.725">Alto (treino pesado 6-7x/semana)</option>
+        <option value="1.9">Muito alto (treino 2x/dia ou trabalho físico)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Objetivo</h2>
+    <div class="goal-row" id="goalRow">
+      <div class="goal-btn" data-v="perder">Cutting</div>
+      <div class="goal-btn active" data-v="manter">Manter</div>
+      <div class="goal-btn" data-v="ganhar">Bulking</div>
+    </div>
+    <div class="slider-block">
+      <div class="slider-head">
+        <span style="color:var(--muted); font-size:12px;">Intensidade do ajuste</span>
+        <span class="val" id="ajusteVal">-500 kcal</span>
+      </div>
+      <input type="range" id="ajuste" min="100" max="1000" step="50" value="500">
+      <div class="ruler-caption"><span>Leve</span><span>Agressivo</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Perfil alimentar</h2>
+    <div class="sub" style="margin-bottom:10px;">Ajusta a lista de alimentos e mostra alertas específicos. Não substitui orientação de nutricionista/médico.</div>
+    <div class="radio-pills" id="dietProfileRow">
+      <div class="radio-pill active" data-v="nenhum">Nenhum</div>
+      <div class="radio-pill" data-v="vegetariano">Vegetariano</div>
+      <div class="radio-pill" data-v="vegano">Vegano</div>
+      <div class="radio-pill" data-v="diabetes">Diabetes</div>
+      <div class="radio-pill" data-v="lowcarb">Low carb</div>
+    </div>
+    <div id="dietProfileWarn"></div>
+  </div>
+
+  <div class="card">
+    <h2>Régua de proteína e gordura</h2>
+    <div class="slider-block" style="margin-top:0;">
+      <div class="slider-head">
+        <span style="color:var(--muted); font-size:12px;">Proteína (g/kg)</span>
+        <span class="val" id="protVal">2.2 g/kg</span>
+      </div>
+      <input type="range" id="protSlider" min="1.6" max="5" step="0.1" value="2.2">
+      <div class="ruler-caption"><span>1.6 (mínimo)</span><span>5.0 (máximo)</span></div>
+    </div>
+    <div class="slider-block">
+      <div class="slider-head">
+        <span style="color:var(--muted); font-size:12px;">Gordura (g/kg)</span>
+        <span class="val" id="fatVal">1.0 g/kg</span>
+      </div>
+      <input type="range" id="fatSlider" min="0.5" max="2" step="0.1" value="1.0">
+      <div class="ruler-caption"><span>0.5</span><span>2.0</span></div>
+    </div>
+
+    <div class="regua" id="regua" style="margin-top:18px;">
+      <div class="seg protein" id="segProt" style="flex-basis:33%;">P<small>--g</small></div>
+      <div class="seg fat" id="segFat" style="flex-basis:33%;">G<small>--g</small></div>
+      <div class="seg carb" id="segCarb" style="flex-basis:34%;">C<small>--g</small></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Resultado</h2>
+    <div class="result-hero">
+      <div class="kcal" id="kcalTotal">0</div>
+      <div class="kcal-label" id="kcalLabel">kcal / dia para manter</div>
+    </div>
+
+    <div class="macro-list">
+      <div class="macro-pill">
+        <span class="dot" style="background:var(--purple);"></span>Proteína
+        <div class="g" id="protG">0 g</div>
+        <div class="kc" id="protKc">0 kcal</div>
+      </div>
+      <div class="macro-pill">
+        <span class="dot" style="background:var(--red);"></span>Gordura
+        <div class="g" id="fatG">0 g</div>
+        <div class="kc" id="fatKc">0 kcal</div>
+      </div>
+      <div class="macro-pill">
+        <span class="dot" style="background:var(--green);"></span>Carbo
+        <div class="g" id="carbG">0 g</div>
+        <div class="kc" id="carbKc">0 kcal</div>
+      </div>
+    </div>
+
+    <div id="warnBox"></div>
+
+    <div class="bmi-row">
+      <span style="color:var(--muted); font-size:13px;">IMC: <strong id="bmiVal" style="color:var(--text);">--</strong></span>
+      <span class="bmi-tag" id="bmiTag">--</span>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    TMB por Mifflin-St Jeor · gordura mínima recomendada de 0.5g/kg para função hormonal · ajusta a régua conforme resposta do corpo, não é regra fixa. Tuas metas ficam salvas neste aparelho e alimentam o Diário automaticamente.
+  </div>
+  </div><!-- /viewCalc -->
+
+  <!-- ===================== DIÁRIO ===================== -->
+  <div class="view" id="viewDiario">
+
+    <div class="date-nav">
+      <button class="dbtn" id="prevDay">‹</button>
+      <div>
+        <div class="dlabel" id="dateLabel">Hoje</div>
+        <div class="dsub" id="dateSub">--</div>
+      </div>
+      <button class="dbtn" id="nextDay">›</button>
+    </div>
+
+    <div class="card">
+      <h2>Progresso do dia</h2>
+      <div class="bar-row" style="margin-top:0;">
+        <div class="label-row"><span>Kcal</span><span id="dBarKcalTxt">0 / 0</span></div>
+        <div class="bar-track"><div class="bar-fill" id="dBarKcal" style="width:0%; background:var(--cyan);"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="label-row"><span>Proteína</span><span id="dBarProtTxt">0 / 0 g</span></div>
+        <div class="bar-track"><div class="bar-fill" id="dBarProt" style="width:0%; background:var(--purple);"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="label-row"><span>Gordura</span><span id="dBarFatTxt">0 / 0 g</span></div>
+        <div class="bar-track"><div class="bar-fill" id="dBarFat" style="width:0%; background:var(--red);"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="label-row"><span>Carbo</span><span id="dBarCarbTxt">0 / 0 g</span></div>
+        <div class="bar-track"><div class="bar-fill" id="dBarCarb" style="width:0%; background:var(--green);"></div></div>
+      </div>
+
+      <div class="water-row">
+        <button class="water-btn" id="waterAdd">+250 ml 💧</button>
+        <button class="water-btn" id="waterSub">-250 ml</button>
+        <div class="water-val" id="waterVal">0 ml / 2500 ml</div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-ghost purple" id="copyYesterday">📋 Copiar refeições de ontem</button>
+        <button class="btn-ghost" id="clearDay">🗑 Limpar dia</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Registrar por foto <span class="ai-badge">IA</span></h2>
+      <div class="sub" style="margin-bottom:10px;">Tira uma foto do prato e a IA estima os alimentos e macros. Vai direto pra <span id="photoMealLabel">Café da manhã</span> — troca a refeição na aba Alimentos.</div>
+      <input type="file" id="photoInput" accept="image/*">
+      <button class="btn-ghost purple" id="photoBtn" style="width:100%;">📷 Tirar/escolher foto do prato</button>
+      <div id="photoStatus" style="margin-top:10px;"></div>
+      <div id="photoResults"></div>
+    </div>
+
+    <div class="card suggest-card">
+      <h2>Sugestão inteligente <span class="h2-action" id="refreshSuggest">↻ atualizar</span></h2>
+      <div id="suggestList"><div class="empty-plate">Preenche teu perfil na Calculadora pra receber sugestões.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Refeições</h2>
+      <div id="mealSections"></div>
+    </div>
+
+    <div class="card">
+      <h2>Micronutrientes do dia</h2>
+      <div class="micro-grid" id="microGrid"></div>
+      <div class="micro-note">Cobertura parcial: só os alimentos mais comuns têm esses dados (valores aproximados). Alimentos sem dado não entram na soma.</div>
+    </div>
+
+  </div><!-- /viewDiario -->
+
+  <!-- ===================== ALIMENTOS ===================== -->
+  <div class="view" id="viewFoods">
+    <div class="card">
+      <h2>Adicionar em</h2>
+      <div class="meal-target-row" id="mealTargetRow"></div>
+      <div class="search-row">
+        <input type="text" id="foodSearch" placeholder="Buscar alimento... ex: frango, banana, arroz, leite">
+      </div>
+      <div class="cat-scroll" id="catScroll"></div>
+      <div class="food-count" id="foodCount"></div>
+      <div id="foodList"></div>
+      <div class="footer-note" style="margin-top:14px; text-align:left;">591 alimentos: 582 da Tabela TACO (NEPA/UNICAMP) + 9 itens essenciais do dia a dia que não constam na TACO (leite líquido, azeites/óleos, whey, sal), marcados com <span style="color:var(--amber);">✦ complementar</span> e baseados em TBCA/USDA.</div>
+    </div>
+  </div><!-- /viewFoods -->
+
+  <!-- ===================== RECEITAS ===================== -->
+  <div class="view" id="viewReceitas">
+    <div class="card">
+      <h2>Cardápio sugerido do dia</h2>
+      <div class="sub" style="margin-bottom:10px;">Monta automaticamente 1 receita por refeição, respeitando teu perfil alimentar, e adiciona tudo no Diário de hoje.</div>
+      <button class="btn-solid" id="autoMenuBtn">✨ Montar cardápio de hoje</button>
+      <div id="autoMenuResult"></div>
+    </div>
+
+    <div class="card">
+      <h2>Receitas</h2>
+      <div class="recipe-filters" id="recipeFilters"></div>
+      <div id="recipeList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Lista de compras</h2>
+      <div class="sub" style="margin-bottom:10px;">Marca as receitas que vai preparar (abaixo, com a estrelinha) e gera a lista consolidada de ingredientes.</div>
+      <button class="btn-ghost purple" id="genShopList" style="width:100%;">🛒 Gerar lista de compras</button>
+      <div id="shopListResult"></div>
+    </div>
+  </div><!-- /viewReceitas -->
+
+  <!-- ===================== PROGRESSO ===================== -->
+  <div class="view" id="viewProgresso">
+    <div class="card">
+      <h2>Resumo</h2>
+      <div class="stat-grid">
+        <div class="stat-pill"><div class="v" id="statDias">0</div><div class="l">dias registrados</div></div>
+        <div class="stat-pill"><div class="v" id="statMedia">0</div><div class="l">kcal média/dia</div></div>
+        <div class="stat-pill"><div class="v" id="statProtMedia">0g</div><div class="l">proteína média/dia</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Calorias — últimos 14 dias</h2>
+      <canvas id="kcalChart" height="140"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Peso corporal</h2>
+      <div class="weight-row">
+        <div class="field">
+          <label>Novo registro (kg)</label>
+          <input type="number" id="weightInput" step="0.1" min="20" placeholder="ex: 79.4">
+        </div>
+        <button class="btn-ghost purple" id="weightAdd" style="height:42px;">+ Registrar</button>
+      </div>
+      <canvas id="weightChart" height="140" style="margin-top:14px;"></canvas>
+      <div class="weight-log" id="weightLog"></div>
+    </div>
+
+    <div class="card">
+      <h2>Relatório semanal</h2>
+      <div class="sub" style="margin-bottom:6px;">Últimos 7 dias vs. os 7 anteriores.</div>
+      <div id="weekReport"></div>
+    </div>
+
+    <div class="card">
+      <h2>Backup dos dados</h2>
+      <div class="sub" style="margin-bottom:10px;">Teus dados ficam só neste aparelho/navegador. Exporta pra guardar ou levar pra outro dispositivo. Por segurança, tua chave de API do Gemini (foto por IA) não entra no backup — precisa colar de novo em Configurações no outro aparelho.</div>
+      <div class="action-row" style="margin-top:0;">
+        <button class="btn-ghost purple" id="exportBtn">⬇ Exportar backup (.json)</button>
+        <button class="btn-ghost" id="importBtn">⬆ Importar backup</button>
+        <input type="file" id="importFile" accept="application/json">
+      </div>
+    </div>
+  </div><!-- /viewProgresso -->
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="cfgModal">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h2>Configurações</h2>
+      <button class="icon-btn" id="cfgCloseBtn">✕</button>
+    </div>
+
+    <div class="cfg-section">
+      <h3>Foto por IA (Google Gemini)</h3>
+      <div class="modal-sub">Pra usar "Registrar por foto", cola aqui tua própria chave de API do Google Gemini, gerada de graça em aistudio.google.com/apikey. Ela fica salva só neste navegador e é usada só pra chamar a API diretamente do teu aparelho — dentro da cota gratuita não tem cobrança.</div>
+      <div class="field">
+        <label>Chave da API (AIzaSy...)</label>
+        <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+      </div>
+    </div>
+
+    <div class="cfg-section">
+      <h3>Lembretes</h3>
+      <div class="cfg-row">
+        <label>Ativar lembretes</label>
+        <div class="toggle" id="remindToggle"></div>
+      </div>
+      <div class="modal-sub">Funcionam enquanto o app estiver aberto no navegador (sem servidor, não dá pra notificar com o app fechado).</div>
+      <div class="cfg-row"><label>☀️ Café da manhã</label><input type="time" id="rtCafe" value="08:00"></div>
+      <div class="cfg-row"><label>🍽️ Almoço</label><input type="time" id="rtAlmoco" value="12:00"></div>
+      <div class="cfg-row"><label>🍎 Lanche</label><input type="time" id="rtLanche" value="16:00"></div>
+      <div class="cfg-row"><label>🌙 Jantar</label><input type="time" id="rtJantar" value="19:30"></div>
+      <div class="cfg-row"><label>💧 Água (a cada quantas horas)</label>
+        <select id="rtWaterHours" style="background:var(--input-bg); border:1px solid var(--border); color:var(--text); padding:7px 8px; border-radius:8px;">
+          <option value="0">Desligado</option>
+          <option value="1">1h</option>
+          <option value="2" selected>2h</option>
+          <option value="3">3h</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-close-row">
+      <button class="btn-solid" id="cfgSaveBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="foods_data.js"></script>
+<script src="micronutrients_data.js"></script>
+<script src="recipes_data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
